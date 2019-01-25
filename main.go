@@ -14,6 +14,8 @@ import (
 	"time"
 )
 
+var address := "http://www.dataview.ru"
+
 var (
 	err       error
 	DIR       = "files" // полный путь к папке
@@ -102,7 +104,7 @@ func deleteFile(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	// редирект на главную страницу
-	http.Redirect(w, r, "http://localhost:8080", 307)
+	http.Redirect(w, r, address, 307)
 }
 
 // добавления файла
@@ -193,5 +195,5 @@ func main() {
 	http.HandleFunc("/", viewFiles)
 	http.HandleFunc("/visualisation/", getView)
 	// запуск сервера
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(address, nil)
 }
