@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-var address := "http://www.dataview.ru"
+var address := "62.109.18.74"
 
 var (
 	err       error
