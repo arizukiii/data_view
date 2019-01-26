@@ -103,7 +103,7 @@ func deleteFile(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	// редирект на главную страницу
-	http.Redirect(w, r, "http://localhost:8080", 307)
+	http.Redirect(w, r, "/", 307)
 }
 
 // добавления файла
