@@ -16,7 +16,6 @@ import (
 
 
 var (
-	address   = "185.43.5.108"
 	err       error
 	DIR       = "files" // полный путь к папке
 	ListFiles []string  // массив строк с названием файлом. можно сделать карту и удалять по ключу и так же хранить больше информации
@@ -104,7 +103,7 @@ func deleteFile(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	// редирект на главную страницу
-	http.Redirect(w, r, address, 307)
+	http.Redirect(w, r, "http://localhost:8080", 307)
 }
 
 // добавления файла
@@ -195,5 +194,5 @@ func main() {
 	http.HandleFunc("/", viewFiles)
 	http.HandleFunc("/visualisation/", getView)
 	// запуск сервера
-	http.ListenAndServe(address, nil)
+	http.ListenAndServe(":8080", nil)
 }
