@@ -213,92 +213,120 @@ var homeTemplate = template.Must(template.New("").Parse(`
 <body>
 <p>BIOCAD's DataView 2.0 - Data Visualization Service</p>
     <div style="width:20%;float:left;">
+	<!-- кнопка обноления таблицы -->
         <button id="reload">Обновить</button>
+		<!-- блок для таблицы -->
         <div id="table"></div>
-        <div>
-            <form method="POST" enctype="multipart/form-data" action="/add">
+		<div>
+		<!-- форма загрузки файла -->
+            <form method="POST" enctype="multipart/form-data" action="">
                 <input type="file" name="file" id="filename">
                 <input  type="button" value="Upload" id="sendBtn">
             </form>
         </div>
+		<!-- блок вывода логов  -->
         <div id="container"></div>
     </div>
+	<!-- обвёртка блока с графиком -->
     <div style="width:80%;float:right;overflow-x: scroll;overflow-y: hidden;">
+	<!-- блок для графика -->
         <div class="ct-chart ct-perfect-fourth" id="chart"></div>
     </div>
     <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <script type="text/javascript">
         $(function () {
+			//создаём переменую для сокета
             var ws;
-
+			//проверяем поддерживает ли браузер вебсокеты
             if (window.WebSocket === undefined) {
                 $("#container").append("Your browser does not support WebSockets");
                 return;
             } else {
+				//создаём подключение через вебсокет
                 ws = initWS();
             }
 
             function initWS() {
+				//указываем сервер для подключения
                 var socket = new WebSocket("ws://localhost:8080/ws"),
-                    container = $("#container")
+					container = $("#container")
+					//новое подключение
                 socket.onopen = function() {
-                    container.append("<p>Socket is open</p>");
+					container.append("<p>Socket is open</p>");
+					//отправляем запрос на получение таблицы
                     socket.send(JSON.stringify({ Type: "getTable"}));
-                };
+				};
+				//оброботка входящих сообщений
                 socket.onmessage = function (e) {
-                    var obj = JSON.parse(e.data);
+					//парсим сообщение
+					var obj = JSON.parse(e.data);
+					//обробатываем по типу, не известные типы сообщений не обробатываются
                     switch(obj.Type){
-                        case "updateTable":
+						//обновление таблицы
+						case "updateTable":
+							//получаем html код таблицы и вставляем в наш блок
                             $("#table").html(obj.Content);
-                            break;
-                        case "initChart":
-google.charts.load('current', {packages: ['corechart', 'line']});
-google.charts.setOnLoadCallback(drawChart);
-
-      function drawChart() {
-        var data = new google.visualization.DataTable();
-        data.addColumn('number', 'X');
-        data.addColumn('number', 'Y');
-        data.addRows(JSON.parse("[" +obj.Content+"]"));
-
-        var options = {
-            width: 860,
-            height: 300
-          };
-
-        var chart = new google.visualization.LineChart(document.getElementById('chart'));
-
-        chart.draw(data, options);
-      }
+							break;
+							//инициализируем график
+						case "initChart":
+							//подгружаем график
+							google.charts.load('current', {packages: ['corechart', 'line']});
+							//запускаем график через функцию drawChart
+							google.charts.setOnLoadCallback(drawChart);
+      						function drawChart() {
+        						var data = new google.visualization.DataTable();
+        						data.addColumn('number', 'X');
+								data.addColumn('number', 'Y');
+								//полученные данные парсим из строки и преобразуем в массив
+								data.addRows(JSON.parse("[" +obj.Content+"]"));
+								//размеры графика
+        						var options = {
+            						width: 10000,
+            						height: 300
+								  };
+								  //указываем блок где вывести график
+        						var chart = new google.visualization.LineChart(document.getElementById('chart'));
+        						chart.draw(data, options);
+      						}
                             break;
                     }
-                }
+				}
+				//в случае закрытия соединения выводим сообщение
                 socket.onclose = function () {
                     container.append("<p>Socket closed</p>");
                 }
 
                 return socket;
             }
-
+			//отправка файла
             $("#sendBtn").click(function (e) {
-                var file = document.getElementById('filename').files[0];
-                var reader = new FileReader();            
+				//получаем файл из формы
+				var file = document.getElementById('filename').files[0];
+				//инициализируем класс для чтения файла
+				var reader = new FileReader();     
+				// функция выполнится после загрузки файла      
                 reader.onload = function(e) {
-                    ws.send(JSON.stringify({ Type: "loadFile", Content:e.target.result,Info:file.name }));
+					//передаём на сервер содержимое файла и его название
+					ws.send(JSON.stringify({ Type: "loadFile", Content:e.target.result,Info:file.name }));
                     alert("Файл загружен");
-                }
+				}
+				//считываем файл как текст. т.е. читаем содержимое файла
                 reader.readAsText(file, "UTF-8");
-            });
+			});
+			// удаление файла, следим за всеми объектами с классом delete-file и в случае нажатия отправляем на сервер название файла из data атребута 
             $(document).on('click','.delete-file',function(){
                 ws.send(JSON.stringify({ Type: "deleteFile", Info:this.dataset.name}));
-            });
+			});
+			//отправляем запрос на обноление таблицы
             $(document).on('click','#reload',function(){
                 ws.send(JSON.stringify({ Type: "getTable"}));
-            });
+			});
+			//отправляем запрос на инициализацию графика, передавая имя файла из дата атребута
             $(document).on('click','.visual-file',function(){
                 ws.send(JSON.stringify({ Type: "visualFile", Info:this.dataset.name}));
 			});
+			//ставим таймер 5 сек. и каждые 5сек отправляем запрос на обноление таблицы
 			window.setInterval(function(){
 				ws.send(JSON.stringify({ Type: "getTable"}));
 			  }, 5000);
